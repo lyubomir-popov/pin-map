@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Custom Pin Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; background: #f3f3f3; }
+    #map { height: 100%; width: 100%; }
+
+    .leaflet-popup-content {
+      font-family: sans-serif;
+      font-size: 14px;
+    }
+
+    .custom-pin {
+      background: none;
+      border: none;
+    }
+  </style>
+  <!-- Roboto instead of Google Sans -->
+<link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+
+<style>
+  body,
+  .leaflet-popup-content,
+  .leaflet-control,
+  .leaflet-container {
+    font-family: 'Roboto', sans-serif !important;
+  }
+</style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <script>
+    const map = L.map('map', {
+      zoomControl: true,
+      attributionControl: false
+    }).setView([20, 0], 2);
+
+    // Use a light, neutral tile layer with landmasses
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO',
+      subdomains: 'abcd',
+      maxZoom: 19
+    }).addTo(map);
+
+
+    // Custom orange flat Google-style pin
+    const orangePin = L.icon({
+      iconUrl: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="46" viewBox="0 0 24 36" fill="none">
+          <path d="M12 0C5.6 0 0 5.4 0 12.1C0 21.2 12 36 12 36C12 36 24 21.2 24 12.1C24 5.4 18.4 0 12 0Z" fill="#E95420"/>
+          <circle cx="12" cy="12" r="5" fill="white"/>
+        </svg>
+      `),
+      iconSize: [24, 36],
+      iconAnchor: [12, 36],
+      popupAnchor: [0, -36],
+      className: 'custom-pin'
+    });
+
+    Papa.parse("data-geocoded.csv", {
+      header: true,
+      download: true,
+      complete: function(results) {
+        const data = results.data;
+
+        for (let row of data) {
+          const lat = parseFloat(row.lat);
+          const lon = parseFloat(row.lon);
+
+          if (!isNaN(lat) && !isNaN(lon)) {
+            L.marker([lat, lon], { icon: orangePin }).addTo(map)
+              .bindPopup(`<strong>${row.name}</strong><br>${row.title}<br>${row.org}<br>${row.city}, ${row.country}`);
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
