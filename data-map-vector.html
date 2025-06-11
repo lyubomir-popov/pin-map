@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vector Map with Markers from CSV</title>
+  <link rel="stylesheet" href="leaflet/leaflet.css" />
+  <style>
+    #map {
+      height: 1200px; /* Set height */
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <!-- Include Leaflet JS locally -->
+  <script src="leaflet/leaflet.js"></script>
+  <!-- Include PapaParse for CSV parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
+  <script>
+    // Initialize the map
+    var map = L.map('map').setView([51.505, -0.09], 2);
+
+    // // Use OpenStreetMap Vector Tiles as base map layer
+    // L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    //   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    // }).addTo(map);
+
+    // CartoDB Positron: light greyscale map
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; Carto',
+      subdomains: 'abcd'
+    }).addTo(map);
+
+    // Custom marker icon (using marker-icon.png and marker-icon-2x.png)
+    var customIcon = L.icon({
+      iconUrl: 'leaflet/images/marker-icon.png',  // Path to regular icon
+      iconRetinaUrl: 'leaflet/images/marker-icon-2x.png',  // Path to 2x icon
+      iconSize: [25, 41],  // Icon size
+      iconAnchor: [12, 41],  // Icon anchor
+      popupAnchor: [1, -34]  // Popup anchor
+    });
+
+    // Load and parse the geocoded CSV file
+    Papa.parse('data-geocoded.csv', {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      complete: function(results) {
+        console.log('CSV Data:', results.data);
+        var markersData = results.data;
+
+        // Loop through the parsed CSV data and add markers
+        markersData.forEach(function(marker) {
+          // Ensure lat and lon are provided for each marker
+          if (marker.lat && marker.lon) {
+            console.log('Adding marker:', marker);  // Log each marker's data
+            L.marker([marker.lat, marker.lon], { icon: customIcon })
+              .bindPopup(marker.title)  // Popup with the title field
+              .addTo(map);
+          }
+        });
+      },
+      error: function(error) {
+        console.error('Error loading CSV:', error);
+      }
+    });
+
+    // SVG Export (Optionally you can use leaflet-svgexport plugin)
+    function exportToSVG() {
+      var svgContent = map.getPanes().overlayPane.innerHTML;
+      var blob = new Blob([svgContent], { type: "image/svg+xml" });
+      var link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'map_export.svg';
+      link.click();
+    }
+
+    // Trigger the export to SVG
+    document.body.onload = function() {
+      var exportButton = document.createElement('button');
+      exportButton.innerText = "Export to SVG";
+      exportButton.onclick = exportToSVG;
+      document.body.appendChild(exportButton);
+    }
+  </script>
+</body>
+</html>
