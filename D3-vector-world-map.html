@@ -11,8 +11,11 @@
     }
     svg {
       display: block;
-      width: 100vw;
-      height: 100vh;
+      width: 1200px;
+      height: 675px;
+      border: 1px solid #ccc;
+      margin: auto;
+      background: #fff;
     }
     .land {
       fill: #d9d9d9;
@@ -37,14 +40,7 @@
   </style>
 </head>
 <body>
-  <svg id="world-map">
-    <defs>
-      <symbol id="marker-icon" viewBox="0 0 24 37">
-        <path opacity="0.1" fill="#000000" d="M12.5,1C6.6,1,1.9,5.8,1.9,11.6s10.6,25.4,10.6,25.4c0,0,10.6-19.5,10.6-25.4S18.4,1,12.5,1ZM12.5,15.3c-2,0-3.7-1.6-3.7-3.7s1.6-3.7,3.7-3.7,3.7,1.6,3.7,3.7-1.6,3.7-3.7,3.7Z"/>
-        <path fill="#000000" d="M11.5,0C5.6,0,.9,4.8.9,10.6s10.6,25.4,10.6,25.4c0,0,10.6-19.5,10.6-25.4S17.4,0,11.5,0ZM11.5,14.3c-2,0-3.7-1.6-3.7-3.7s1.6-3.7,3.7-3.7,3.7,1.6,3.7,3.7-1.6,3.7-3.7,3.7Z"/>
-        <path fill="#ffffff" opacity="0.5" d="M11.5,14.3c-2,0-3.7-1.6-3.7-3.7s1.6-3.7,3.7-3.7,3.7,1.6,3.7,3.7-1.6,3.7-3.7,3.7Z"/>
-      </symbol>
-    </defs>
+  <svg id="world-map" width="1200" height="675" viewBox="0 0 1200 675" xmlns="http://www.w3.org/2000/svg" >
   </svg>
 
   <button id="exportBtn">Export SVG</button>
@@ -52,8 +48,8 @@
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="https://unpkg.com/topojson-client@3"></script>
   <script>
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+    const width = 1200;
+    const height = 675;
     const svg = d3.select("#world-map");
 
     const projection = d3.geoNaturalEarth1()
@@ -61,23 +57,28 @@
       .translate([width / 2, height / 2]);
 
     const path = d3.geoPath().projection(projection);
-    const markerScale = .8; // Scale for the marker icon
+    const markerScale = 0.8; // Scale for the marker icon
     const markerWidth = 24 * markerScale;
     const markerHeight = 37 * markerScale;
     const markerOffsetX = markerWidth / 2;
     const markerOffsetY = markerHeight;
 
+    // Marker paths from your SVG symbol
+    const markerPaths = [
+      { d: "M12.5,1C6.6,1,1.9,5.8,1.9,11.6s10.6,25.4,10.6,25.4c0,0,10.6-19.5,10.6-25.4S18.4,1,12.5,1ZM12.5,15.3c-2,0-3.7-1.6-3.7-3.7s1.6-3.7,3.7-3.7,3.7,1.6,3.7,3.7-1.6,3.7-3.7,3.7Z", opacity: 0.1, fill: "#000" },
+      { d: "M11.5,0C5.6,0,.9,4.8.9,10.6s10.6,25.4,10.6,25.4c0,0,10.6-19.5,10.6-25.4S17.4,0,11.5,0ZM11.5,14.3c-2,0-3.7-1.6-3.7-3.7s1.6-3.7,3.7-3.7,3.7,1.6,3.7,3.7-1.6,3.7-3.7,3.7Z", opacity: 1, fill: "#000" },
+      { d: "M11.5,14.3c-2,0-3.7-1.6-3.7-3.7s1.6-3.7,3.7-3.7,3.7,1.6,3.7,3.7-1.6,3.7-3.7,3.7Z", opacity: 0.5, fill: "#fff" }
+    ];
+
     d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json").then(worldData => {
       const countries = topojson.feature(worldData, worldData.objects.countries);
 
-    svg.append("g")
-      .selectAll("path")
-      .data(countries.features)
-      .enter().append("path")
-      .attr("d", path)
-      .attr("fill", "#d9d9d9")
-      .attr("stroke", "#ffffff")
-      .attr("stroke-width", 1);
+      svg.append("g")
+        .selectAll("path")
+        .data(countries.features)
+        .enter().append("path")
+        .attr("class", "land")
+        .attr("d", path);
 
       d3.csv("data-geocoded.csv").then(data => {
         data.forEach(d => {
@@ -87,22 +88,21 @@
 
         const markerGroup = svg.append("g");
 
-        markerGroup.selectAll("use")
-          .data(data)
-          .enter()
-          .append("use")
-          .attr("class", "marker")
-          .attr("href", "#marker-icon")
-          .attr("width", markerWidth)
-          .attr("height", markerHeight)
-          .attr("x", d => {
-            const coords = projection([d.lon, d.lat]);
-            return coords ? coords[0] - markerOffsetX : null;
-          })
-          .attr("y", d => {
-            const coords = projection([d.lon, d.lat]);
-            return coords ? coords[1] - markerOffsetY : null;
-          });
+        data.forEach(d => {
+          const coords = projection([d.lon, d.lat]);
+          if (coords) {
+            const g = markerGroup.append("g")
+              .attr("class", "marker")
+              .attr("transform", `translate(${coords[0] - markerOffsetX},${coords[1] - markerOffsetY}) scale(${markerScale})`);
+
+            markerPaths.forEach(p => {
+              g.append("path")
+                .attr("d", p.d)
+                .attr("fill", p.fill)
+                .attr("opacity", p.opacity);
+            });
+          }
+        });
       });
     });
 
