@@ -73,12 +73,15 @@
     d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json").then(worldData => {
       const countries = topojson.feature(worldData, worldData.objects.countries);
 
-      svg.append("g")
-        .selectAll("path")
-        .data(countries.features)
-        .enter().append("path")
-        .attr("class", "land")
-        .attr("d", path);
+    svg.append("g")
+      .selectAll("path")
+      .data(countries.features)
+      .enter().append("path")
+      .attr("class", "land")
+      .attr("d", path)
+      .attr("fill", "#d9d9d9")
+      .attr("stroke", "#fff")
+      .attr("stroke-width", 1);
 
       d3.csv("data-geocoded.csv").then(data => {
         data.forEach(d => {
